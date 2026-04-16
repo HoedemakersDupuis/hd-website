@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Hoedemakers & Dupuis</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #0a0a0a; --white: #fafaf8; --warm: #f5f2ec;
+  --gold: #b89a5a; --gl: #e8e5e0; --grey: #6b6b6b;
+}
+body { font-family: system-ui, sans-serif; background: #edeae5; color: var(--black); min-height: 100vh; }
+
+/* LOGIN */
+#login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--black); }
+.lbox { background: var(--white); padding: 52px; max-width: 360px; width: 100%; text-align: center; }
+.lbox h1 { font-family: Georgia, serif; font-size: 28px; font-weight: 400; margin-bottom: 6px; }
+.lbox p { font-size: 13px; color: var(--grey); margin-bottom: 28px; }
+.lbox input { width: 100%; padding: 13px 16px; border: 1px solid var(--gl); font-size: 15px; margin-bottom: 12px; outline: none; font-family: inherit; border-radius: 0; }
+.lbox input:focus { border-color: var(--black); }
+.lbox button { width: 100%; padding: 14px; background: var(--black); color: var(--white); border: none; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+.lbox button:hover { background: #333; }
+.lerr { color: #c62828; font-size: 13px; margin-top: 12px; background: #fce4ec; padding: 10px; display: none; }
+
+/* APP */
+#app { display: none; }
+.sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: var(--black); overflow-y: auto; }
+.shead { padding: 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.shead h2 { font-family: Georgia, serif; font-size: 16px; font-weight: 400; color: var(--white); }
+.shead span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+.snav { padding: 12px 0; }
+.snav .cat { padding: 16px 20px 4px; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.25); }
+.snav a { display: block; padding: 11px 20px; font-size: 13px; color: rgba(255,255,255,.5); text-decoration: none; border-left: 2px solid transparent; transition: all .15s; cursor: pointer; }
+.snav a:hover, .snav a.on { color: var(--white); background: rgba(255,255,255,.06); border-left-color: var(--gold); }
+.main { margin-left: 220px; padding: 32px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.topbar h2 { font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+.outbtn { background: none; border: 1px solid var(--gl); padding: 8px 16px; font-size: 12px; cursor: pointer; color: var(--grey); }
+.outbtn:hover { border-color: var(--black); color: var(--black); }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.stat { background: var(--white); padding: 22px; border-bottom: 3px solid var(--gold); }
+.stat .n { font-family: Georgia, serif; font-size: 36px; font-weight: 300; color: var(--gold); }
+.stat .l { font-size: 12px; color: var(--grey); margin-top: 2px; }
+
+/* PANEL */
+.panel { background: var(--white); margin-bottom: 20px; }
+.phead { padding: 16px 24px; border-bottom: 1px solid var(--gl); display: flex; align-items: center; justify-content: space-between; }
+.phead h3 { font-family: Georgia, serif; font-size: 17px; font-weight: 400; }
+.addbtn { background: var(--black); color: var(--white); border: none; padding: 8px 18px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.addbtn:hover { background: #333; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 16px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--grey); border-bottom: 1px solid var(--gl); font-weight: 400; }
+td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--gl); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--warm); }
+.ebtn { background: none; border: none; cursor: pointer; color: var(--grey); font-size: 12px; padding: 3px 8px; margin-right: 4px; }
+.ebtn:hover { color: var(--black); text-decoration: underline; }
+.dbtn { background: none; border: none; cursor: pointer; color: #c62828; font-size: 12px; padding: 3px 8px; }
+.dbtn:hover { text-decoration: underline; }
+.badge { display: inline-block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; }
+.verhuurd { background: #e8f5e9; color: #2e7d32; }
+.verkocht { background: #fce4ec; color: #c62828; }
+.ontwikkeling { background: #fff8e1; color: #f57f17; }
+.beschikbaar { background: var(--warm); color: var(--gold); border: 1px solid var(--gold); }
+
+/* ENTRIES */
+.entry { padding: 16px 24px; border-bottom: 1px solid var(--gl); }
+.entry:last-child { border-bottom: none; }
+.entry h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.entry .meta { font-size: 12px; color: var(--grey); margin-bottom: 6px; }
+.entry .msg { font-size: 13px; color: #444; line-height: 1.6; }
+.empty { padding: 40px; text-align: center; color: var(--grey); font-size: 14px; }
+
+/* MODAL */
+.mbg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; align-items: center; justify-content: center; }
+.mbg.open { display: flex; }
+.mbox { background: var(--white); padding: 40px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+.mbox h3 { font-family: Georgia, serif; font-size: 20px; font-weight: 400; margin-bottom: 20px; }
+.fg { margin-bottom: 14px; }
+.fg label { display: block; font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--grey); margin-bottom: 6px; }
+.fg input, .fg textarea, .fg select { width: 100%; padding: 10px 12px; border: 1px solid var(--gl); font-size: 14px; font-family: inherit; outline: none; border-radius: 0; -webkit-appearance: none; }
+.fg input:focus, .fg textarea:focus, .fg select:focus { border-color: var(--black); }
+.fg textarea { height: 100px; resize: vertical; }
+.mactions { display: flex; gap: 10px; margin-top: 20px; }
+.savebtn { flex: 1; padding: 12px; background: var(--black); color: var(--white); border: none; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.savebtn:hover { background: #333; }
+.cancelbtn { padding: 12px 20px; background: none; border: 1px solid var(--gl); font-size: 12px; cursor: pointer; color: var(--grey); }
+.trow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.togwrap { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+.togwrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.togslider { position: absolute; inset: 0; background: var(--gl); border-radius: 10px; cursor: pointer; transition: .2s; }
+.togslider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .2s; }
+.togwrap input:checked + .togslider { background: var(--black); }
+.togwrap input:checked + .togslider:before { transform: translateX(18px); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <h1>H&amp;D Admin</h1>
+    <p>Hoedemakers &amp; Dupuis — Beheerpaneel</p>
+    <input type="password" id="pw" placeholder="Wachtwoord">
+    <button id="loginbtn">Inloggen</button>
+    <div class="lerr" id="lerr">Onjuist wachtwoord.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="shead">
+      <h2>H&amp;D Admin</h2>
+      <span>Beheerpaneel</span>
+    </div>
+    <div class="snav">
+      <div class="cat">Overzicht</div>
+      <a class="on" data-s="dashboard">📊 Dashboard</a>
+      <div class="cat">Content</div>
+      <a data-s="vacatures">📋 Vacatures</a>
+      <a data-s="panden">🏠 Portfolio</a>
+      <a data-s="blog">✏️ Blog</a>
+      <div class="cat">Leads</div>
+      <a data-s="contact">💬 Contactberichten</a>
+      <a data-s="waitlist">📧 Wachtlijst</a>
+      <div class="cat">Site</div>
+      <a href="index.html" target="_blank">🌐 Website bekijken</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h2 id="ptitle">Dashboard</h2>
+      <button class="outbtn" id="outbtn">Uitloggen</button>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- VAC MODAL -->
+<div class="mbg" id="vm">
+  <div class="mbox">
+    <h3 id="vmtitle">Vacature</h3>
+    <input type="hidden" id="vid">
+    <div class="fg"><label>Functietitel</label><input id="vtitel" placeholder="bijv. Asset Manager"></div>
+    <div class="fg">
+      <label>Opdrachtgever</label>
+      <div class="trow">
+        <label class="togwrap"><input type="checkbox" id="vvertr" checked><span class="togslider"></span></label>
+        <span id="vvlabel">Vertrouwelijk opdrachtgever</span>
+      </div>
+      <input id="vopd" placeholder="Naam opdrachtgever" style="display:none">
+    </div>
+    <div class="fg"><label>Regio</label><input id="vregio" placeholder="bijv. Amsterdam"></div>
+    <div class="fg"><label>Type dienstverband</label>
+      <select id="vtype"><option>Fulltime</option><option>Parttime</option><option>Interim</option></select>
+    </div>
+    <div class="fg"><label>Categorie</label>
+      <select id="vcat"><option value="development">Development</option><option value="management">Management</option><option value="investment">Investment</option></select>
+    </div>
+    <div class="fg"><label>Omschrijving</label><textarea id="vomsch" placeholder="Korte omschrijving..."></textarea></div>
+    <div class="mactions">
+      <button class="savebtn" id="vsave">Opslaan</button>
+      <button class="cancelbtn" id="vcancel">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAND MODAL -->
+<div class="mbg" id="pm">
+  <div class="mbox">
+    <h3 id="pmtitle">Pand</h3>
+    <input type="hidden" id="pid">
+    <div class="fg"><label>Naam object</label><input id="pnaam" placeholder="bijv. Woningcomplex Noord"></div>
+    <div class="fg"><label>Stad / Regio</label><input id="padres" placeholder="bijv. Breda"></div>
+    <div class="fg"><label>Type</label>
+      <select id="ptype"><option>Woningen</option><option>Appartement</option><option>Commercieel</option><option>Gemengd</option></select>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="pstatus"><option value="verhuurd">Verhuurd</option><option value="verkocht">Verkocht</option><option value="ontwikkeling">In ontwikkeling</option><option value="beschikbaar">Beschikbaar</option></select>
+    </div>
+    <div class="fg"><label>Oppervlakte</label><input id="popp" placeholder="bijv. 320 m²"></div>
+    <div class="mactions">
+      <button class="savebtn" id="psave">Opslaan</button>
+      <button class="cancelbtn" id="pcancel">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- BLOG MODAL -->
+<div class="mbg" id="bm">
+  <div class="mbox">
+    <h3 id="bmtitle">Artikel</h3>
+    <input type="hidden" id="bid">
+    <div class="fg"><label>Titel</label><input id="btitel" placeholder="Titel van het artikel"></div>
+    <div class="fg"><label>Categorie</label>
+      <select id="bcat"><option value="markt">Vastgoedmarkt</option><option value="realestate">Real Estate</option><option value="search">Werving & Selectie</option></select>
+    </div>
+    <div class="fg"><label>Auteur</label><input id="bauteur" placeholder="bijv. Yente Dupuis"></div>
+    <div class="fg"><label>Intro (1 zin — zichtbaar in overzicht)</label><input id="bintro" placeholder="Korte introductiezin..."></div>
+    <div class="fg"><label>Volledige tekst (lege regel = nieuwe alinea)</label>
+      <textarea id="btekst" style="height:160px" placeholder="Schrijf hier de volledige tekst..."></textarea>
+    </div>
+    <div class="mactions">
+      <button class="savebtn" id="bsave">Opslaan</button>
+      <button class="cancelbtn" id="bcancel">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var PW = 'HD2025';
+
+// --- DATA ---
+var DV = [
+  {id:1,titel:'Projectmanager Vastgoedontwikkeling',opdrachtgever:'Vertrouwelijk opdrachtgever',regio:'Amsterdam',type:'Fulltime',categorie:'development',omschrijving:'Senior projectmanager gezocht.'},
+  {id:2,titel:'Asset Manager Woningportefeuille',opdrachtgever:'Vertrouwelijk opdrachtgever',regio:'Rotterdam',type:'Fulltime',categorie:'management',omschrijving:'Ervaren asset manager gezocht.'}
+];
+var DP = [
+  {id:1,naam:'Woningcomplex Breda-Noord',adres:'Breda',type:'Woningen',status:'verhuurd',oppervlakte:'320 m²'},
+  {id:2,naam:'Appartement Centrum',adres:'Rotterdam',type:'Appartement',status:'verkocht',oppervlakte:'85 m²'}
+];
+var DB = [
+  {id:1,titel:'De vastgoedmarkt in 2025',categorie:'markt',datum:'15 november 2024',auteur:'Lois Hoedemakers',intro:'Kansen ondanks druk op de markt.',inhoud:'<p>De Nederlandse vastgoedmarkt biedt kansen voor de scherpe investeerder.</p>'},
+  {id:2,titel:'Sector-specialisatie in recruitment',categorie:'search',datum:'8 oktober 2024',auteur:'Yente Dupuis',intro:'Generalist of specialist? Het maakt het verschil.',inhoud:'<p>Wij werken uitsluitend voor de vastgoedsector.</p>'}
+];
+
+function load(key, def) {
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+function save(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { alert('Opslaan mislukt.'); }
+}
+function nextId(list) {
+  if (!list.length) return 1;
+  return Math.max.apply(null, list.map(function(x){return x.id;})) + 1;
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// --- AUTH ---
+document.getElementById('loginbtn').addEventListener('click', function() {
+  var val = document.getElementById('pw').value;
+  if (val === PW) {
+    try { sessionStorage.setItem('hd_ok','1'); } catch(e){}
+    showApp();
+  } else {
+    document.getElementById('lerr').style.display = 'block';
+    document.getElementById('pw').value = '';
+    document.getElementById('pw').focus();
+  }
+});
+document.getElementById('pw').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('loginbtn').click();
+});
+document.getElementById('outbtn').addEventListener('click', function() {
+  try { sessionStorage.removeItem('hd_ok'); } catch(e){}
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('pw').value = '';
+});
+
+function showApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  showSection('dashboard');
+}
+
+try { if (sessionStorage.getItem('hd_ok') === '1') showApp(); } catch(e){}
+
+// --- NAV ---
+var titles = {dashboard:'Dashboard',vacatures:'Vacatures',panden:'Portfolio',blog:'Blog',contact:'Contactberichten',waitlist:'Wachtlijst'};
+
+document.querySelectorAll('.snav a[data-s]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    showSection(this.getAttribute('data-s'));
+  });
+});
+
+function showSection(name) {
+  document.querySelectorAll('.snav a[data-s]').forEach(function(a) { a.classList.remove('on'); });
+  var link = document.querySelector('.snav a[data-s="' + name + '"]');
+  if (link) link.classList.add('on');
+  document.getElementById('ptitle').textContent = titles[name] || name;
+  if (name === 'dashboard') renderDash();
+  else if (name === 'vacatures') renderVac();
+  else if (name === 'panden') renderPand();
+  else if (name === 'blog') renderBlog();
+  else if (name === 'contact') renderContact();
+  else if (name === 'waitlist') renderWaitlist();
+}
+
+// --- DASHBOARD ---
+function renderDash() {
+  var v = load('hd_vacatures', DV);
+  var p = load('hd_panden', DP);
+  var c = load('hd_contact', []);
+  var w = load('hd_waitlist', []);
+  var html = '<div class="stats">'
+    + '<div class="stat"><div class="n">'+v.length+'</div><div class="l">Vacatures</div></div>'
+    + '<div class="stat"><div class="n">'+p.length+'</div><div class="l">Portfolio objecten</div></div>'
+    + '<div class="stat"><div class="n">'+c.length+'</div><div class="l">Contactberichten</div></div>'
+    + '<div class="stat"><div class="n">'+w.length+'</div><div class="l">Wachtlijst</div></div>'
+    + '</div>';
+  html += '<div class="panel"><div class="phead"><h3>Recente contactberichten</h3></div>';
+  if (!c.length) { html += '<div class="empty">Nog geen berichten.</div>'; }
+  else {
+    c.slice(-5).reverse().forEach(function(item) {
+      html += '<div class="entry"><h4>'+esc(item.naam)+'</h4>'
+        +'<div class="meta">'+esc(item.email)+' &middot; '+esc(item.rol||'—')+' &middot; '+new Date(item.datum).toLocaleDateString('nl-NL')+'</div>'
+        +'<div class="msg">'+esc(item.bericht||'—')+'</div></div>';
+    });
+  }
+  html += '</div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+// --- VACATURES ---
+function renderVac() {
+  var list = load('hd_vacatures', DV);
+  var html = '<div class="panel"><div class="phead"><h3>Vacatures ('+list.length+')</h3>'
+    +'<button class="addbtn" id="newvac">+ Nieuwe vacature</button></div>'
+    +'<table><thead><tr><th>Functie</th><th>Regio</th><th>Categorie</th><th>Opdrachtgever</th><th></th></tr></thead><tbody>';
+  if (!list.length) { html += '<tr><td colspan="5" class="empty">Geen vacatures.</td></tr>'; }
+  else {
+    list.forEach(function(v) {
+      html += '<tr>'
+        +'<td><strong>'+esc(v.titel)+'</strong></td>'
+        +'<td>'+esc(v.regio)+'</td>'
+        +'<td>'+esc(v.categorie)+'</td>'
+        +'<td>'+esc(v.opdrachtgever)+'</td>'
+        +'<td><button class="ebtn" data-id="'+v.id+'">Bewerken</button>'
+        +'<button class="dbtn" data-id="'+v.id+'">Verwijderen</button></td></tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('content').innerHTML = html;
+  document.getElementById('newvac').onclick = function() { openVacModal(null); };
+  document.querySelectorAll('#content .ebtn').forEach(function(b) {
+    b.onclick = function() { openVacModal(parseInt(this.getAttribute('data-id'))); };
+  });
+  document.querySelectorAll('#content .dbtn').forEach(function(b) {
+    b.onclick = function() {
+      if (!confirm('Vacature verwijderen?')) return;
+      var id = parseInt(this.getAttribute('data-id'));
+      save('hd_vacatures', load('hd_vacatures', DV).filter(function(x){return x.id!==id;}));
+      renderVac();
+    };
+  });
+}
+
+function openVacModal(id) {
+  document.getElementById('vmtitle').textContent = id ? 'Vacature bewerken' : 'Nieuwe vacature';
+  document.getElementById('vid').value = id || '';
+  if (id) {
+    var v = load('hd_vacatures', DV).find(function(x){return x.id===id;});
+    if (v) {
+      document.getElementById('vtitel').value = v.titel;
+      document.getElementById('vregio').value = v.regio;
+      document.getElementById('vtype').value = v.type;
+      document.getElementById('vcat').value = v.categorie;
+      document.getElementById('vomsch').value = v.omschrijving||'';
+      var vertr = v.opdrachtgever === 'Vertrouwelijk opdrachtgever';
+      document.getElementById('vvertr').checked = vertr;
+      document.getElementById('vopd').style.display = vertr ? 'none' : 'block';
+      document.getElementById('vopd').value = vertr ? '' : v.opdrachtgever;
+      document.getElementById('vvlabel').textContent = vertr ? 'Vertrouwelijk opdrachtgever' : v.opdrachtgever;
+    }
+  } else {
+    ['vtitel','vregio','vomsch','vopd'].forEach(function(x){document.getElementById(x).value='';});
+    document.getElementById('vvertr').checked = true;
+    document.getElementById('vopd').style.display = 'none';
+    document.getElementById('vvlabel').textContent = 'Vertrouwelijk opdrachtgever';
+  }
+  document.getElementById('vm').classList.add('open');
+}
+
+document.getElementById('vvertr').addEventListener('change', function() {
+  document.getElementById('vopd').style.display = this.checked ? 'none' : 'block';
+  document.getElementById('vvlabel').textContent = this.checked ? 'Vertrouwelijk opdrachtgever' : 'Naam invullen:';
+});
+document.getElementById('vsave').onclick = function() {
+  var id = document.getElementById('vid').value;
+  id = id ? parseInt(id) : null;
+  var vertr = document.getElementById('vvertr').checked;
+  var item = {
+    id: id || nextId(load('hd_vacatures', DV)),
+    titel: document.getElementById('vtitel').value,
+    opdrachtgever: vertr ? 'Vertrouwelijk opdrachtgever' : document.getElementById('vopd').value,
+    regio: document.getElementById('vregio').value,
+    type: document.getElementById('vtype').value,
+    categorie: document.getElementById('vcat').value,
+    omschrijving: document.getElementById('vomsch').value
+  };
+  var list = load('hd_vacatures', DV);
+  if (id) { for(var i=0;i<list.length;i++){if(list[i].id===id){list[i]=item;break;}} }
+  else { list.push(item); }
+  save('hd_vacatures', list);
+  closeModal('vm');
+  renderVac();
+};
+document.getElementById('vcancel').onclick = function() { closeModal('vm'); };
+
+// --- PANDEN ---
+function renderPand() {
+  var list = load('hd_panden', DP);
+  var html = '<div class="panel"><div class="phead"><h3>Portfolio ('+list.length+' objecten)</h3>'
+    +'<button class="addbtn" id="newpand">+ Nieuw pand</button></div>'
+    +'<table><thead><tr><th>Object</th><th>Stad</th><th>Type</th><th>Oppervlakte</th><th>Status</th><th></th></tr></thead><tbody>';
+  if (!list.length) { html += '<tr><td colspan="6" class="empty">Geen panden.</td></tr>'; }
+  else {
+    list.forEach(function(p) {
+      html += '<tr><td><strong>'+esc(p.naam)+'</strong></td><td>'+esc(p.adres)+'</td>'
+        +'<td>'+esc(p.type)+'</td><td>'+esc(p.oppervlakte)+'</td>'
+        +'<td><span class="badge '+esc(p.status)+'">'+esc(p.status)+'</span></td>'
+        +'<td><button class="ebtn" data-id="'+p.id+'">Bewerken</button>'
+        +'<button class="dbtn" data-id="'+p.id+'">Verwijderen</button></td></tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('content').innerHTML = html;
+  document.getElementById('newpand').onclick = function() { openPandModal(null); };
+  document.querySelectorAll('#content .ebtn').forEach(function(b) {
+    b.onclick = function() { openPandModal(parseInt(this.getAttribute('data-id'))); };
+  });
+  document.querySelectorAll('#content .dbtn').forEach(function(b) {
+    b.onclick = function() {
+      if (!confirm('Pand verwijderen?')) return;
+      var id = parseInt(this.getAttribute('data-id'));
+      save('hd_panden', load('hd_panden', DP).filter(function(x){return x.id!==id;}));
+      renderPand();
+    };
+  });
+}
+
+function openPandModal(id) {
+  document.getElementById('pmtitle').textContent = id ? 'Pand bewerken' : 'Nieuw pand toevoegen';
+  document.getElementById('pid').value = id || '';
+  if (id) {
+    var p = load('hd_panden', DP).find(function(x){return x.id===id;});
+    if (p) {
+      document.getElementById('pnaam').value = p.naam;
+      document.getElementById('padres').value = p.adres;
+      document.getElementById('ptype').value = p.type;
+      document.getElementById('pstatus').value = p.status;
+      document.getElementById('popp').value = p.oppervlakte;
+    }
+  } else {
+    ['pnaam','padres','popp'].forEach(function(x){document.getElementById(x).value='';});
+  }
+  document.getElementById('pm').classList.add('open');
+}
+document.getElementById('psave').onclick = function() {
+  var id = document.getElementById('pid').value;
+  id = id ? parseInt(id) : null;
+  var item = {
+    id: id || nextId(load('hd_panden', DP)),
+    naam: document.getElementById('pnaam').value,
+    adres: document.getElementById('padres').value,
+    type: document.getElementById('ptype').value,
+    status: document.getElementById('pstatus').value,
+    oppervlakte: document.getElementById('popp').value
+  };
+  var list = load('hd_panden', DP);
+  if (id) { for(var i=0;i<list.length;i++){if(list[i].id===id){list[i]=item;break;}} }
+  else { list.push(item); }
+  save('hd_panden', list);
+  closeModal('pm');
+  renderPand();
+};
+document.getElementById('pcancel').onclick = function() { closeModal('pm'); };
+
+// --- BLOG ---
+function renderBlog() {
+  var list = load('hd_blog', DB);
+  var html = '<div class="panel"><div class="phead"><h3>Blog artikelen ('+list.length+')</h3>'
+    +'<button class="addbtn" id="newblog">+ Nieuw artikel</button></div>'
+    +'<table><thead><tr><th>Titel</th><th>Categorie</th><th>Auteur</th><th>Datum</th><th></th></tr></thead><tbody>';
+  if (!list.length) { html += '<tr><td colspan="5" class="empty">Geen artikelen.</td></tr>'; }
+  else {
+    list.forEach(function(a) {
+      html += '<tr><td><strong>'+esc(a.titel)+'</strong></td><td>'+esc(a.categorie)+'</td>'
+        +'<td>'+esc(a.auteur)+'</td><td>'+esc(a.datum)+'</td>'
+        +'<td><button class="ebtn" data-id="'+a.id+'">Bewerken</button>'
+        +'<button class="dbtn" data-id="'+a.id+'">Verwijderen</button></td></tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('content').innerHTML = html;
+  document.getElementById('newblog').onclick = function() { openBlogModal(null); };
+  document.querySelectorAll('#content .ebtn').forEach(function(b) {
+    b.onclick = function() { openBlogModal(parseInt(this.getAttribute('data-id'))); };
+  });
+  document.querySelectorAll('#content .dbtn').forEach(function(b) {
+    b.onclick = function() {
+      if (!confirm('Artikel verwijderen?')) return;
+      var id = parseInt(this.getAttribute('data-id'));
+      save('hd_blog', load('hd_blog', DB).filter(function(x){return x.id!==id;}));
+      renderBlog();
+    };
+  });
+}
+
+function openBlogModal(id) {
+  document.getElementById('bmtitle').textContent = id ? 'Artikel bewerken' : 'Nieuw artikel schrijven';
+  document.getElementById('bid').value = id || '';
+  if (id) {
+    var a = load('hd_blog', DB).find(function(x){return x.id===id;});
+    if (a) {
+      document.getElementById('btitel').value = a.titel;
+      document.getElementById('bcat').value = a.categorie;
+      document.getElementById('bauteur').value = a.auteur;
+      document.getElementById('bintro').value = a.intro;
+      document.getElementById('btekst').value = a.inhoud.replace(/<\/p>/g,'\n\n').replace(/<[^>]+>/g,'').trim();
+    }
+  } else {
+    ['btitel','bauteur','bintro','btekst'].forEach(function(x){document.getElementById(x).value='';});
+  }
+  document.getElementById('bm').classList.add('open');
+}
+document.getElementById('bsave').onclick = function() {
+  var id = document.getElementById('bid').value;
+  id = id ? parseInt(id) : null;
+  var tekst = document.getElementById('btekst').value;
+  var inhoud = tekst.split(/\n\n+/).filter(function(x){return x.trim();})
+    .map(function(a){return '<p>'+esc(a.trim())+'</p>';}).join('');
+  var item = {
+    id: id || nextId(load('hd_blog', DB)),
+    titel: document.getElementById('btitel').value,
+    categorie: document.getElementById('bcat').value,
+    auteur: document.getElementById('bauteur').value,
+    datum: new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'}),
+    intro: document.getElementById('bintro').value,
+    inhoud: inhoud
+  };
+  var list = load('hd_blog', DB);
+  if (id) { for(var i=0;i<list.length;i++){if(list[i].id===id){list[i]=item;break;}} }
+  else { list.push(item); }
+  save('hd_blog', list);
+  closeModal('bm');
+  renderBlog();
+};
+document.getElementById('bcancel').onclick = function() { closeModal('bm'); };
+
+// --- CONTACT & WAITLIST ---
+function renderContact() {
+  var list = load('hd_contact', []);
+  var html = '<div class="panel"><div class="phead"><h3>Contactberichten ('+list.length+')</h3></div>';
+  if (!list.length) { html += '<div class="empty">Nog geen contactberichten ontvangen.</div>'; }
+  else {
+    list.slice().reverse().forEach(function(c) {
+      html += '<div class="entry"><h4>'+esc(c.naam)+'</h4>'
+        +'<div class="meta">'+esc(c.email)+' &nbsp;&middot;&nbsp; '+esc(c.telefoon||'—')+' &nbsp;&middot;&nbsp; '+esc(c.rol||'—')+' &nbsp;&middot;&nbsp; '+new Date(c.datum).toLocaleDateString('nl-NL')+'</div>'
+        +'<div class="msg">'+esc(c.bericht||'—')+'</div></div>';
+    });
+  }
+  html += '</div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderWaitlist() {
+  var list = load('hd_waitlist', []);
+  var html = '<div class="panel"><div class="phead"><h3>Wachtlijst ('+list.length+' inschrijvingen)</h3></div>'
+    +'<table><thead><tr><th>E-mailadres</th><th>Datum</th></tr></thead><tbody>';
+  if (!list.length) { html += '<tr><td colspan="2" class="empty">Nog geen inschrijvingen.</td></tr>'; }
+  else {
+    list.slice().reverse().forEach(function(w) {
+      html += '<tr><td>'+esc(w.email)+'</td><td>'+new Date(w.datum).toLocaleDateString('nl-NL')+'</td></tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+// Close modals on background click
+document.querySelectorAll('.mbg').forEach(function(m) {
+  m.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+</script>
+</body>
+</html>
